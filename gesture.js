@@ -52,6 +52,7 @@ Gesture.prototype = {
                 if (this.started) {
                     console.log(this.name, "DETECTED", this.currentGesture);
                     this.lastDetectedTime = now;
+                    this.onGestureCb(this.currentGesture);
                 }
                 this.startTime = 0;
                 this.started = false;

@@ -99,8 +99,16 @@ let currentRecording = [];
 let currentRecordingStart = 0;
 
 
+const wss = new WebSocket("ws://dezyn-gesture.herokuapp.com:80");
 let gestureLeft = new Gesture('left');
 let gestureRight = new Gesture('right');
+
+function onGesture(gesture) {
+    console.log("Yep", gesture);
+    wss.send(`{"gesture":"X=${gesture.x} Y=${gesture.y} Z=${gesture.z}"}`);
+}
+gestureLeft.onGesture(onGesture);
+gestureRight.onGesture(onGesture);
 
 let activeEffect = 'mask';
 function onResults(results) {
