@@ -99,7 +99,7 @@ let currentRecording = [];
 let currentRecordingStart = 0;
 
 
-const wss = new WebSocket("ws://dezyn-gesture.herokuapp.com:80");
+const wss = new WebSocket("wss://dezyn-gesture.herokuapp.com:80");
 let gestureLeft = new Gesture('left');
 let gestureRight = new Gesture('right');
 
