@@ -51,6 +51,7 @@ function downloadBlob(blob, filename) {
 //-----------------------------------------------------------------------------------------
 
 import Vector from "./vector.js";
+import Gesture from "./gesture.js";
 
 const controls = window;
 const LandmarkGrid = window.LandmarkGrid;
@@ -80,22 +81,26 @@ function VecFromLM(lm) {
     return new Vector(lm.x, lm.y, lm.z);
 }
 
-// const landmarkContainer = document.getElementsByClassName('landmark-grid-container')[0];
-// const grid = new LandmarkGrid(landmarkContainer, {
-//     connectionColor: 0xCCCCCC,
-//     definedColors: [{ name: 'LEFT', value: 0xffa500 }, { name: 'RIGHT', value: 0x00ffff }],
-//     range: 2,
-//     fitToGrid: true,
-//     labelSuffix: 'm',
-//     landmarkSize: 2,
-//     numCellsPerAxis: 4,
-//     showHidden: false,
-//     centered: true,
-// });
+const landmarkContainer = document.getElementsByClassName('landmark-grid-container')[0];
+const grid = new LandmarkGrid(landmarkContainer, {
+    connectionColor: 0xCCCCCC,
+    definedColors: [{ name: 'LEFT', value: 0xffa500 }, { name: 'RIGHT', value: 0x00ffff }],
+    range: 2,
+    fitToGrid: true,
+    labelSuffix: 'm',
+    landmarkSize: 2,
+    numCellsPerAxis: 4,
+    showHidden: false,
+    centered: true,
+});
 
 let recording = false;
 let currentRecording = [];
 let currentRecordingStart = 0;
+
+
+let gestureLeft = new Gesture('left');
+let gestureRight = new Gesture('right');
 
 let activeEffect = 'mask';
 function onResults(results) {
@@ -138,6 +143,32 @@ function onResults(results) {
             .map(index => results.poseLandmarks[index]), { visibilityMin: 0.65, color: 'white', fillColor: 'white' });
         
         
+        if (results.poseLandmarks[POSE_LANDMARKS.RIGHT_SHOULDER].visibility > 0.5 && 
+            results.poseLandmarks[POSE_LANDMARKS.LEFT_SHOULDER].visibility > 0.5) {
+        
+            let rs = VecFromLM(results.poseLandmarks[POSE_LANDMARKS.RIGHT_SHOULDER]);
+            let ls = VecFromLM(results.poseLandmarks[POSE_LANDMARKS.LEFT_SHOULDER]);
+            let center = rs.add(ls).divide(2.0);
+
+            if (results.poseLandmarks[POSE_LANDMARKS.LEFT_INDEX].visibility > 0.5) {
+                let left = VecFromLM(results.poseLandmarks[POSE_LANDMARKS.LEFT_INDEX]).subtract(center);
+                gestureLeft.track(left);
+            } else {
+                gestureLeft.reset();
+            }
+
+            if (results.poseLandmarks[POSE_LANDMARKS.RIGHT_INDEX].visibility > 0.5) {
+                let right = VecFromLM(results.poseLandmarks[POSE_LANDMARKS.RIGHT_INDEX]).subtract(center);
+                gestureRight.track(right);
+            } else {
+                gestureRight.reset();
+            }
+        } else {
+            gestureLeft.reset();
+            gestureRight.reset();
+        }
+    
+
         /*
 
         for each hand
@@ -163,15 +194,15 @@ function onResults(results) {
             .map(index => results.poseLandmarks[index]), { visibilityMin: 0.65, color: 'red', fillColor: 'yellow' });
     }
     canvasCtx.restore();
-    // if (results.poseWorldLandmarks) {
-    //     grid.updateLandmarks(results.poseWorldLandmarks, mpPose.POSE_CONNECTIONS, [
-    //         { list: Object.values(mpPose.POSE_LANDMARKS_LEFT), color: 'LEFT' },
-    //         { list: Object.values(mpPose.POSE_LANDMARKS_RIGHT), color: 'RIGHT' },
-    //     ]);
-    // }
-    // else {
-    //     grid.updateLandmarks([]);
-    // }
+    if (results.poseWorldLandmarks) {
+        grid.updateLandmarks(results.poseWorldLandmarks, mpPose.POSE_CONNECTIONS, [
+            { list: Object.values(mpPose.POSE_LANDMARKS_LEFT), color: 'LEFT' },
+            { list: Object.values(mpPose.POSE_LANDMARKS_RIGHT), color: 'RIGHT' },
+        ]);
+    }
+    else {
+        grid.updateLandmarks([]);
+    }
 }
 const pose = new mpPose.Pose(options);
 pose.onResults(onResults);
